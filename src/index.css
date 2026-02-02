@@ -5,6 +5,8 @@
   body {
     font-family: 'Cairo', sans-serif;
     @apply antialiased bg-slate-50 text-slate-900;
+    padding-top: env(safe-area-inset-top);
+    min-height: 100vh;
   }
 
   /* Custom Scrollbar */
