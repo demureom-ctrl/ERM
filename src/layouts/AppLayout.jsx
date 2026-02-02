@@ -1,6 +1,6 @@
 import React from 'react';
 import { Outlet, NavLink, useLocation } from 'react-router-dom';
-import { Home, Package, Receipt, ShoppingCart, LogOut, Percent } from 'lucide-react';
+import { Home, Package, Receipt, ShoppingCart, LogOut, Percent, Users } from 'lucide-react';
 import clsx from 'clsx';
 import { useAuth } from '../context/AuthContext';
 
@@ -42,6 +42,7 @@ export const AppLayout = () => {
                             <NavItem to="/inventory" icon={Package} label="المخزون" />
                             <NavItem to="/discounts" icon={Percent} label="التخفيضات" />
                             <NavItem to="/orders" icon={Receipt} label="الطلبات" />
+                            <NavItem to="/users" icon={Users} label="المستخدمين" />
                         </>
                     )}
                 </nav>

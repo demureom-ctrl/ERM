@@ -12,30 +12,20 @@ export const LoginPage = () => {
     const { login } = useAuth();
     const navigate = useNavigate();
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        const success = login(username, password);
+        const success = await login(username, password);
         if (success) {
             toast.success('تم تسجيل الدخول بنجاح');
-            if (username === 'sales') {
-                navigate('/pos');
-            } else {
-                navigate('/');
-            }
+            // Check role from localstorage or user state if available immediately, 
+            // but here we can trust the logic to redirect based on what we just fetched or generic redirect
+            // Ideally we check the user object but it depends on state update.
+            // Let's redirect to root and let the protected route handle it or check username
+            // Since we don't have user state immediately updated in this closure usually, 
+            // we can check the result of login if it returns role or we can just redirect to /
+            navigate('/');
         } else {
             toast.error('اسم المستخدم أو كلمة المرور غير صحيحة');
-        }
-    };
-
-    const setDemoLogin = (role) => {
-        if (role === 'admin') {
-            setUsername('admin');
-            setPassword('admin');
-            setIsSalesMode(false);
-        } else {
-            setUsername('sales');
-            setPassword('sales');
-            setIsSalesMode(true);
         }
     };
 
@@ -54,23 +44,6 @@ export const LoginPage = () => {
                         مرحباً بك
                     </h1>
                     <p className="text-slate-500">سجل الدخول للمتابعة</p>
-                </div>
-
-                <div className="flex gap-2 mb-6 p-1 bg-slate-100/80 rounded-xl">
-                    <button
-                        type="button"
-                        onClick={() => setDemoLogin('sales')}
-                        className={`flex-1 py-2 text-sm font-medium rounded-lg transition-all ${isSalesMode ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
-                    >
-                        موظف مبيعات
-                    </button>
-                    <button
-                        type="button"
-                        onClick={() => setDemoLogin('admin')}
-                        className={`flex-1 py-2 text-sm font-medium rounded-lg transition-all ${!isSalesMode ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
-                    >
-                        مدير النظام
-                    </button>
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-4">
@@ -112,8 +85,7 @@ export const LoginPage = () => {
                 </form>
 
                 <div className="mt-6 text-center text-xs text-slate-400">
-                    <p>Admin: admin / admin</p>
-                    <p>Sales: sales / sales</p>
+                    <p>© 2024 نظام إدارة المبيعات</p>
                 </div>
             </div>
         </div>

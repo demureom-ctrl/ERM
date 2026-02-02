@@ -4,6 +4,8 @@ import { useNavigate } from 'react-router-dom';
 
 const AuthContext = createContext();
 
+import { api } from '../services/api';
+
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -17,24 +19,28 @@ export const AuthProvider = ({ children }) => {
         setLoading(false);
     }, []);
 
-    const login = (username, password) => {
-        // Mock login logic
-        if (username === 'admin' && password === 'admin') {
-            const userData = { name: 'Admin User', role: 'admin' };
-            setUser(userData);
-            localStorage.setItem('user', JSON.stringify(userData));
-            return true;
-        } else if (username === 'sales' && password === 'sales') {
-            const userData = { name: 'Sales User', role: 'sales' };
-            setUser(userData);
-            localStorage.setItem('user', JSON.stringify(userData));
-            return true;
-        }
+    const login = async (username, password) => {
+        try {
+            const userData = await api.login(username, password);
 
+            if (userData) {
+                setUser(userData);
+                localStorage.setItem('user', JSON.stringify(userData));
+
+                // Track Login
+                api.logActivity(userData, 'تسجيل دخول', { time: new Date().toISOString() });
+                return true;
+            }
+        } catch (e) {
+            console.error(e);
+        }
         return false;
     };
 
     const logout = () => {
+        if (user) {
+            api.logActivity(user, 'تسجيل خروج', { time: new Date().toISOString() });
+        }
         setUser(null);
         localStorage.removeItem('user');
     };

@@ -318,5 +318,61 @@ export const api = {
         }]);
 
         return updatedProduct[0];
+    },
+
+    // User Management
+    login: async (username, password) => {
+        const { data, error } = await supabase
+            .from('users')
+            .select('*')
+            .eq('username', username)
+            .eq('password', password)
+            .maybeSingle();
+
+        if (error) return null;
+        return data;
+    },
+
+    getUsers: async () => {
+        const { data, error } = await supabase.from('users').select('*').order('created_at', { ascending: false });
+        if (error) throw error;
+        return data;
+    },
+
+    addUser: async (user) => {
+        const { data, error } = await supabase.from('users').insert([user]).select();
+        if (error) throw error;
+        return data[0];
+    },
+
+    deleteUser: async (id) => {
+        const { error } = await supabase.from('users').delete().eq('id', id);
+        if (error) throw error;
+        return true;
+    },
+
+    // Activity Logs
+    logActivity: async (user, action, details = {}) => {
+        if (!user) return;
+
+        const log = {
+            user_id: user.id,
+            username: user.username,
+            action: action,
+            details: details
+        };
+
+        await supabase.from('activity_logs').insert([log]);
+    },
+
+    getLogs: async () => {
+        const { data, error } = await supabase
+            .from('activity_logs')
+            .select('*')
+            .order('created_at', { ascending: false })
+            .limit(100);
+
+        if (error) throw error;
+        return data;
     }
 };

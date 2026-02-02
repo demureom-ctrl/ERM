@@ -10,6 +10,7 @@ import { AddProductPage } from './pages/AddProductPage';
 import { EditItemPage } from './pages/EditItemPage';
 import { CategoriesPage } from './pages/CategoriesPage';
 import { DiscountsPage } from './pages/DiscountsPage';
+import { UsersPage } from './pages/UsersPage';
 
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { LoginPage } from './pages/LoginPage';
@@ -56,6 +57,7 @@ function App() {
             <Route path="/inventory/edit/:id" element={<ProtectedRoute allowedRoles={['admin']}><EditItemPage /></ProtectedRoute>} />
             <Route path="/inventory/categories" element={<ProtectedRoute allowedRoles={['admin']}><CategoriesPage /></ProtectedRoute>} />
             <Route path="/discounts" element={<ProtectedRoute><DiscountsPage /></ProtectedRoute>} />
+            <Route path="/users" element={<ProtectedRoute allowedRoles={['admin']}><UsersPage /></ProtectedRoute>} />
 
             <Route path="/orders" element={<ProtectedRoute allowedRoles={['admin']}><OrdersPage /></ProtectedRoute>} />
           </Route>
