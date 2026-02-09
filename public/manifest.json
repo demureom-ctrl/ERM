@@ -6,8 +6,8 @@
     "background_color": "#ffffff",
     "display": "standalone",
     "orientation": "portrait",
-    "scope": "./",
-    "start_url": "./",
+    "scope": "/ERM/",
+    "start_url": "/ERM/",
     "icons": [
         {
             "src": "vite.svg",
