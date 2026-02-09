@@ -7,7 +7,7 @@
     "display": "standalone",
     "orientation": "portrait",
     "scope": "/ERM/",
-    "start_url": "/ERM/",
+    "start_url": "/ERM/index.html",
     "icons": [
         {
             "src": "vite.svg",
