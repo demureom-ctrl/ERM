@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
 import { ArrowLeft, Upload, Check, Loader, Package, Droplet } from 'lucide-react';
@@ -9,7 +9,7 @@ import clsx from 'clsx';
 export const AddProductPage = () => {
     const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
-    const [categories, setCategories] = useState([]);
+    const [categories, setCategories] = useState<string[]>([]);
 
     // Mode: 'product' or 'material'
     const [mode, setMode] = useState('product');
@@ -26,14 +26,11 @@ export const AddProductPage = () => {
 
     useEffect(() => {
         // Load categories dynamic
-        api.getCategories().then(data => {
-            setCategories(data);
-            if (data.length > 0) setFormData(prev => ({ ...prev, type: data[0] }));
-        });
+        api.getCategories().then(data => setCategories(data));
     }, []);
 
-    const handleImageUpload = (e) => {
-        const file = e.target.files[0];
+    const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
         if (file) {
             if (file.size > 2 * 1024 * 1024) { // 2MB limit
                 toast.error('حجم الصورة كبير جداً (الحد الأقصى 2 ميجابايت)');
@@ -42,13 +39,13 @@ export const AddProductPage = () => {
 
             const reader = new FileReader();
             reader.onloadend = () => {
-                setFormData(prev => ({ ...prev, image_base64: reader.result }));
+                setFormData(prev => ({ ...prev, image_base64: reader.result as string }));
             };
             reader.readAsDataURL(file);
         }
     };
 
-    const handleSubmit = async (e) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
         if (mode === 'product') {

@@ -1,19 +1,21 @@
+
 import React, { useEffect, useState } from 'react';
 import { api } from '../services/api';
-import { Search, Plus, Minus, X, Check, ShoppingBag, Filter, Trash2 } from 'lucide-react';
+import { Product, Discount, CartItem } from '../types';
+import { Search, Plus, Minus, Trash2, Check, ShoppingBag, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import clsx from 'clsx';
 import { AnimatePresence, motion } from 'framer-motion';
 
 export const POSPage = () => {
-    const [products, setProducts] = useState([]);
-    const [cart, setCart] = useState([]);
+    const [products, setProducts] = useState<Product[]>([]);
+    const [cart, setCart] = useState<CartItem[]>([]);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState('');
     const [activeCategory, setActiveCategory] = useState('الكل');
-    const [categories, setCategories] = useState(['الكل']);
+    const [categories, setCategories] = useState<string[]>(['الكل']);
     const [showCartMobile, setShowCartMobile] = useState(false);
-    const [activeDiscounts, setActiveDiscounts] = useState([]);
+    const [activeDiscounts, setActiveDiscounts] = useState<Discount[]>([]);
 
     useEffect(() => {
         loadData();
@@ -42,23 +44,23 @@ export const POSPage = () => {
         return matchesSearch && matchesCategory;
     });
 
-    const addToCart = (product) => {
+    const addToCart = (product: Product) => {
         setCart(prev => {
             const existing = prev.find(item => item.productId === product.id);
             if (existing) {
-                toast.success(`تم تحديث الكمية: ${product.name}`, { id: `cart-${product.id}`, duration: 1000 });
+                toast.success(`تم تحديث الكمية: ${product.name} `, { id: `cart - ${product.id} `, duration: 1000 });
                 return prev.map(item =>
                     item.productId === product.id
                         ? { ...item, quantity: item.quantity + 1 }
                         : item
                 );
             }
-            toast.success(`تمت الإضافة للسلة: ${product.name}`, { id: `cart-${product.id}`, duration: 2000 });
+            toast.success(`تمت الإضافة للسلة: ${product.name} `, { id: `cart - ${product.id} `, duration: 2000 });
             return [...prev, { productId: product.id, product, quantity: 1 }];
         });
     };
 
-    const updateQuantity = (productId, delta) => {
+    const updateQuantity = (productId: string, delta: number) => {
         setCart(prev => prev.map(item => {
             if (item.productId === productId) {
                 const newQty = Math.max(0, item.quantity + delta);
@@ -66,15 +68,15 @@ export const POSPage = () => {
                 return { ...item, quantity: newQty };
             }
             return item;
-        }).filter(Boolean));
+        }).filter(Boolean) as CartItem[]);
     };
 
-    const getItemQty = (productId) => {
+    const getItemQty = (productId: string) => {
         return cart.find(item => item.productId === productId)?.quantity || 0;
     };
 
     // Helper: Get discount for a product
-    const getProductDiscount = (productId) => {
+    const getProductDiscount = (productId: string) => {
         for (const discount of activeDiscounts) {
             if (discount.apply_to_all) return discount.percentage;
             if (discount.product_ids.includes(productId)) return discount.percentage;
@@ -90,7 +92,7 @@ export const POSPage = () => {
     }, 0);
     const totalAmount = subTotal - totalDiscount;
 
-    const [paymentMethod, setPaymentMethod] = useState('cash'); // 'cash' | 'card'
+    const [paymentMethod, setPaymentMethod] = useState<'cash' | 'card'>('cash'); // 'cash' | 'card'
 
     const handleCheckout = async () => {
         if (cart.length === 0) return;
@@ -112,6 +114,11 @@ export const POSPage = () => {
 
     return (
         <div className="flex h-screen bg-slate-100 overflow-hidden">
+            {loading && (
+                <div className="absolute inset-0 bg-white/50 z-50 flex items-center justify-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+                </div>
+            )}
             {/* Left Panel: Products */}
             <div className="flex-1 flex flex-col h-full overflow-hidden">
                 {/* Header */}
@@ -310,7 +317,21 @@ export const POSPage = () => {
 };
 
 // Extracted Cart Component for reuse
-const CartPanel = ({ cart, updateQuantity, subTotal, totalDiscount, totalAmount, handleCheckout, clearCart, onClose, paymentMethod, setPaymentMethod }) => {
+
+interface CartPanelProps {
+    cart: CartItem[];
+    updateQuantity: (productId: string, delta: number) => void;
+    subTotal: number;
+    totalDiscount: number;
+    totalAmount: number;
+    handleCheckout: () => void;
+    clearCart: () => void;
+    onClose?: () => void;
+    paymentMethod: 'cash' | 'card';
+    setPaymentMethod: React.Dispatch<React.SetStateAction<'cash' | 'card'>>;
+}
+
+const CartPanel = ({ cart, updateQuantity, subTotal, totalDiscount, totalAmount, handleCheckout, clearCart, onClose, paymentMethod, setPaymentMethod }: CartPanelProps) => {
     return (
         <div className="flex flex-col h-full">
             <div className="p-5 border-b border-slate-100 flex justify-between items-center bg-white">

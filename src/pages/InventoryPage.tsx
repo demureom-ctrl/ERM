@@ -1,21 +1,21 @@
 import React, { useEffect, useState } from 'react';
 import { api } from '../services/api';
-import { Search, Filter, AlertTriangle, CheckCircle, Package, Droplet, Plus, Tag, Truck, Pencil, Factory } from 'lucide-react';
+import { Product, RawMaterial, RecipeItem, InventoryItem } from '../types';
+import { Search, AlertTriangle, CheckCircle, Package, Droplet, Plus, Tag, Truck, Pencil, Factory } from 'lucide-react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import clsx from 'clsx';
 import toast from 'react-hot-toast';
 
 export const InventoryPage = () => {
     const navigate = useNavigate();
-    const [items, setItems] = useState([]);
+    const [items, setItems] = useState<InventoryItem[]>([]);
     const [filter, setFilter] = useState('الكل');
     const [search, setSearch] = useState('');
     const [purchaseModalOpen, setPurchaseModalOpen] = useState(false);
-    const [selectedMaterial, setSelectedMaterial] = useState(null);
+    const [selectedMaterial, setSelectedMaterial] = useState<RawMaterial | null>(null);
 
     const [manufactureModalOpen, setManufactureModalOpen] = useState(false);
-    const [selectedProduct, setSelectedProduct] = useState(null);
-    const [manufactureQty, setManufactureQty] = useState('');
+    const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
     useEffect(() => {
         loadData();
@@ -28,14 +28,16 @@ export const InventoryPage = () => {
         setItems([...normalizedProducts, ...normalizedMaterials]);
     };
 
-    const handlePurchase = async (qty, cost) => {
+    const handlePurchase = async (qty: string, unitPrice: string) => {
+        if (!selectedMaterial) return;
         try {
-            await api.updateMaterialStock(selectedMaterial.id, qty, cost);
+            await api.updateMaterialStock(selectedMaterial.id, qty, unitPrice);
             toast.success('تم تسجيل الشراء بنجاح');
             setPurchaseModalOpen(false);
             loadData();
-        } catch (error) {
-            toast.error('فشل تسجيل العملية');
+        } catch (error: any) {
+
+            toast.error('فشل تسجيل العملية: ' + (error.message || 'غير معروف'));
         }
     };
 
@@ -69,7 +71,7 @@ export const InventoryPage = () => {
                         placeholder="بحث في المخزون..."
                         className="input-premium pl-10"
                         value={search}
-                        onChange={e => setSearch(e.target.value)}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearch(e.target.value)}
                     />
                 </div>
 
@@ -126,19 +128,40 @@ export const InventoryPage = () => {
                                 <h3 className="font-bold text-slate-900 text-lg mb-0.5">{item.name}</h3>
                                 <div className="flex items-center gap-2 text-xs font-medium text-slate-500">
                                     <span className="bg-slate-100 px-2 py-0.5 rounded-md">
-                                        {item.category === 'منتج' ? item.type : item.unit}
+                                        {item.category === 'منتج' ? (item as Product).type : (item as RawMaterial).unit}
                                     </span>
-                                    {!item.isRaw && <span>• سعر البيع: {item.price} ر.ع.</span>}
+                                    {!item.isRaw && <span>• سعر البيع: {(item as Product).price} ر.ع.</span>}
+                                    {item.isRaw && (item as RawMaterial).avg_cost && (item as RawMaterial).avg_cost! > 0 && <span>• متوسط التكلفة: {Number((item as RawMaterial).avg_cost).toFixed(3)} ر.ع.</span>}
                                 </div>
                             </div>
                         </div>
 
                         <div className="text-right flex items-center gap-4">
-                            {/* Manufacture Button for Products with Recipe */}
-                            {!item.isRaw && item.recipe && item.recipe.length > 0 && (
+                            {/* Manufacture Button for Products - Always visible */}
+                            {!item.isRaw && (
                                 <button
-                                    onClick={(e) => { e.stopPropagation(); setSelectedProduct(item); setManufactureModalOpen(true); }}
-                                    className="px-4 py-2 bg-indigo-600 text-white text-sm font-bold rounded-xl hover:bg-indigo-700 transition-all shadow-md shadow-indigo-200 flex items-center gap-2 active:scale-95"
+                                    onClick={(e: React.MouseEvent) => {
+                                        e.stopPropagation();
+                                        const product = item as Product;
+                                        if (product.recipe && product.recipe.length > 0) {
+                                            setSelectedProduct(product);
+                                            setManufactureModalOpen(true);
+                                        } else {
+                                            toast.error('يجب إضافة مواد خام (وصفة) لهذا المنتج أولاً من صفحة التعديل', {
+                                                duration: 4000,
+                                                icon: '⚠️'
+                                            });
+                                            // Optional: navigate to edit page
+                                            // navigate(`/inventory/edit/${item.id}`);
+                                        }
+                                    }}
+                                    className={clsx(
+                                        "px-4 py-2 text-sm font-bold rounded-xl flex items-center gap-2 active:scale-95 transition-all shadow-md",
+                                        (item as Product).recipe && (item as Product).recipe!.length > 0
+                                            ? "bg-indigo-600 text-white hover:bg-indigo-700 shadow-indigo-200"
+                                            : "bg-slate-100 text-slate-400 hover:bg-slate-200 hover:text-slate-600"
+                                    )}
+                                    title={(item as Product).recipe && (item as Product).recipe!.length > 0 ? "تصنيع" : "أضف وصفة أولاً"}
                                 >
                                     <Factory size={16} />
                                     <span>تصنيع</span>
@@ -148,7 +171,7 @@ export const InventoryPage = () => {
                             {/* Purchase Button for Raw Materials */}
                             {item.isRaw && (
                                 <button
-                                    onClick={(e) => { e.stopPropagation(); setSelectedMaterial(item); setPurchaseModalOpen(true); }}
+                                    onClick={(e: React.MouseEvent) => { e.stopPropagation(); setSelectedMaterial(item as RawMaterial); setPurchaseModalOpen(true); }}
                                     className="px-4 py-2 bg-teal-600 text-white text-sm font-bold rounded-xl hover:bg-teal-700 transition-all shadow-md shadow-teal-200 flex items-center gap-2 active:scale-95"
                                 >
                                     <Plus size={16} />
@@ -186,14 +209,13 @@ export const InventoryPage = () => {
             {manufactureModalOpen && selectedProduct && (
                 <ManufactureModal
                     product={selectedProduct}
-                    onClose={() => { setManufactureModalOpen(false); setManufactureQty(''); }}
+                    onClose={() => { setManufactureModalOpen(false); }}
                     onConfirm={(qty) => {
                         api.manufactureProduct(selectedProduct.id, qty)
                             .then(() => {
                                 toast.success(`تم تصنيع ${qty} من ${selectedProduct.name}`);
                                 loadData();
                                 setManufactureModalOpen(false);
-                                setManufactureQty('');
                             })
                             .catch(err => toast.error(err.message || 'فشل التصنيع'));
                     }}
@@ -212,14 +234,22 @@ export const InventoryPage = () => {
     );
 };
 
-const PurchaseModal = ({ material, onClose, onConfirm }) => {
-    const [qty, setQty] = useState('');
-    const [cost, setCost] = useState('');
+interface PurchaseModalProps {
+    material: RawMaterial;
+    onClose: () => void;
+    onConfirm: (qty: string, unitPrice: string) => void;
+}
 
-    const handleSubmit = (e) => {
+const PurchaseModal = ({ material, onClose, onConfirm }: PurchaseModalProps) => {
+    const [qty, setQty] = useState('');
+    const [unitPrice, setUnitPrice] = useState('');
+
+    const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        onConfirm(qty, cost);
+        onConfirm(qty, unitPrice);
     };
+
+    const totalCost = (parseFloat(qty) || 0) * (parseFloat(unitPrice) || 0);
 
     return (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -237,7 +267,7 @@ const PurchaseModal = ({ material, onClose, onConfirm }) => {
                     </div>
                     <div>
                         <h3 className="font-bold text-slate-900">{material.name}</h3>
-                        <p className="text-sm text-slate-500">مخزون حالي: {material.stock_qty} {material.unit}</p>
+                        <p className="text-sm text-slate-500">مخزون حالي: {material.quantity} {material.unit}</p>
                     </div>
                 </div>
 
@@ -254,16 +284,21 @@ const PurchaseModal = ({ material, onClose, onConfirm }) => {
                         />
                     </div>
                     <div>
-                        <label className="text-sm font-bold text-slate-700 mb-1 block">التكلفة الإجمالية (ر.ع.)</label>
+                        <label className="text-sm font-bold text-slate-700 mb-1 block">سعر الوحدة ({material.unit})</label>
                         <input
                             type="number"
-                            step="0.1"
+                            step="0.001"
                             required
                             className="input-premium w-full"
                             placeholder="0.000"
-                            value={cost}
-                            onChange={(e) => setCost(e.target.value)}
+                            value={unitPrice}
+                            onChange={(e) => setUnitPrice(e.target.value)}
                         />
+                    </div>
+
+                    <div className="bg-slate-50 p-3 rounded-xl flex justify-between items-center">
+                        <span className="text-sm font-bold text-slate-500">الإجمالي:</span>
+                        <span className="text-lg font-bold text-teal-600">{totalCost.toLocaleString()} ر.ع.</span>
                     </div>
 
                     <button type="submit" className="btn-primary w-full py-3 mt-4 text-lg justify-center">
@@ -276,9 +311,16 @@ const PurchaseModal = ({ material, onClose, onConfirm }) => {
     );
 };
 
-const ManufactureModal = ({ product, onClose, onConfirm }) => {
+
+interface ManufactureModalProps {
+    product: Product;
+    onClose: () => void;
+    onConfirm: (qty: string) => void;
+}
+
+const ManufactureModal = ({ product, onClose, onConfirm }: ManufactureModalProps) => {
     const [qty, setQty] = useState('');
-    const [materials, setMaterials] = useState([]);
+    const [materials, setMaterials] = useState<RawMaterial[]>([]);
 
     useEffect(() => {
         // Fetch current material stock
@@ -287,22 +329,23 @@ const ManufactureModal = ({ product, onClose, onConfirm }) => {
         });
     }, []);
 
-    const handleSubmit = (e) => {
+    const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         onConfirm(qty);
     };
 
-    const getMaterialAvailable = (materialId) => {
+    const getMaterialAvailable = (materialId: string) => {
         const mat = materials.find(m => m.id === materialId);
         return mat ? mat.quantity : 0;
     };
 
-    const getRequiredQty = (ingredient) => {
+    const getRequiredQty = (ingredient: RecipeItem) => {
         return ingredient.quantity * (parseInt(qty) || 0);
     };
 
     const canManufacture = () => {
-        if (!qty || qty <= 0) return false;
+        const quantity = parseInt(qty);
+        if (!qty || isNaN(quantity) || quantity <= 0) return false;
         if (!product.recipe || product.recipe.length === 0) return false;
 
         return product.recipe.every(ing => {
@@ -346,13 +389,14 @@ const ManufactureModal = ({ product, onClose, onConfirm }) => {
                     </div>
 
                     {/* Recipe Requirements */}
-                    {qty > 0 && product.recipe && product.recipe.length > 0 && (
+                    {parseInt(qty) > 0 && product.recipe && product.recipe.length > 0 && (
                         <div className="bg-slate-50 p-4 rounded-xl space-y-2">
                             <h4 className="text-sm font-bold text-slate-700 mb-2">المواد المطلوبة:</h4>
                             {product.recipe.map((ing, idx) => {
                                 const required = getRequiredQty(ing);
                                 const available = getMaterialAvailable(ing.materialId);
                                 const sufficient = available >= required;
+                                const mat = materials.find(m => m.id === ing.materialId);
 
                                 return (
                                     <div key={idx} className={clsx(
@@ -361,7 +405,7 @@ const ManufactureModal = ({ product, onClose, onConfirm }) => {
                                     )}>
                                         <span>{ing.name}</span>
                                         <span className="font-bold">
-                                            {required} / {available} {ing.unit}
+                                            {required} / {available} {mat?.unit || ''}
                                         </span>
                                     </div>
                                 );

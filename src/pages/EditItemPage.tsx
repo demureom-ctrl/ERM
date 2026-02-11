@@ -2,7 +2,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { api } from '../services/api';
-import { ArrowLeft, Upload, Check, Loader, Trash2, Save } from 'lucide-react';
+import { RawMaterial, RecipeItem } from '../types';
+import { ArrowLeft, Upload, Loader, Trash2, Save } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export const EditItemPage = () => {
@@ -10,7 +11,7 @@ export const EditItemPage = () => {
     const navigate = useNavigate();
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
-    const [categories, setCategories] = useState([]);
+    const [categories, setCategories] = useState<string[]>([]);
 
     // We determine mode based on fetched data
     const [isRaw, setIsRaw] = useState(false);
@@ -25,8 +26,8 @@ export const EditItemPage = () => {
         image_placeholder: ''
     });
 
-    const [materials, setMaterials] = useState([]);
-    const [recipe, setRecipe] = useState([]);
+    const [materials, setMaterials] = useState<RawMaterial[]>([]);
+    const [recipe, setRecipe] = useState<RecipeItem[]>([]);
     const [selectedMaterial, setSelectedMaterial] = useState('');
     const [ingredientQty, setIngredientQty] = useState('');
 
@@ -35,6 +36,7 @@ export const EditItemPage = () => {
     }, [id]);
 
     const loadData = async () => {
+        if (!id) return;
         try {
             const [item, cats, mats] = await Promise.all([
                 api.getItem(id),
@@ -64,8 +66,9 @@ export const EditItemPage = () => {
         }
     };
 
-    const handleImageUpload = (e) => {
-        const file = e.target.files[0];
+
+    const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
         if (file) {
             if (file.size > 2 * 1024 * 1024) {
                 toast.error('حجم الصورة كبير جداً');
@@ -73,17 +76,19 @@ export const EditItemPage = () => {
             }
             const reader = new FileReader();
             reader.onloadend = () => {
-                setFormData(prev => ({ ...prev, image_placeholder: reader.result }));
+                const result = reader.result as string;
+                setFormData(prev => ({ ...prev, image_placeholder: result }));
             };
             reader.readAsDataURL(file);
         }
     };
 
-    const handleSubmit = async (e) => {
+
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setSaving(true);
         try {
-            const updatePayload = {
+            const updatePayload: any = {
                 name: formData.name,
                 image_placeholder: formData.image_placeholder
             };
@@ -100,9 +105,11 @@ export const EditItemPage = () => {
                 updatePayload.recipe = recipe; // Save recipe for products
             }
 
-            await api.updateItem(id, updatePayload, isRaw);
-            toast.success('تم الحفظ بنجاح');
-            navigate('/inventory');
+            if (id) {
+                await api.updateItem(id, updatePayload, isRaw);
+                toast.success('تم الحفظ بنجاح');
+                navigate('/inventory');
+            }
         } catch (error) {
             toast.error('فشل الحفظ');
         } finally {
@@ -111,7 +118,7 @@ export const EditItemPage = () => {
     };
 
     const handleDelete = async () => {
-        if (confirm('هل أنت متأكد من حذف هذا العنصر؟ لا يمكن التراجع عن هذا الإجراء.')) {
+        if (id && confirm('هل أنت متأكد من حذف هذا العنصر؟ لا يمكن التراجع عن هذا الإجراء.')) {
             try {
                 await api.deleteItem(id);
                 toast.success('تم الحذف');
@@ -278,13 +285,12 @@ export const EditItemPage = () => {
                                     const updated = [...recipe];
                                     updated[existingIndex].quantity = parseFloat(ingredientQty);
                                     setRecipe(updated);
-                                } else {
+                                } else if (mat) {
                                     // Add new
                                     setRecipe([...recipe, {
                                         materialId: mat.id,
                                         name: mat.name,
-                                        quantity: parseFloat(ingredientQty),
-                                        unit: mat.unit
+                                        quantity: parseFloat(ingredientQty)
                                     }]);
                                 }
                                 setSelectedMaterial('');

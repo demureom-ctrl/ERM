@@ -1,20 +1,25 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { api } from '../services/api';
-import { Clock, Calendar, ChevronRight, ShoppingBag } from 'lucide-react';
+import { Sale } from '../types';
+import { Clock, ShoppingBag } from 'lucide-react';
 import clsx from 'clsx';
 
 export const OrdersPage = () => {
-    const [sales, setSales] = useState([]);
+    const [sales, setSales] = useState<Sale[]>([]);
 
     useEffect(() => {
         api.getSales().then(data => {
             // Sort by newest first
-            setSales([...data].sort((a, b) => new Date(b.created_at) - new Date(a.created_at)));
+            setSales([...data].sort((a, b) => {
+                const dateA = a.created_at ? new Date(a.created_at).getTime() : 0;
+                const dateB = b.created_at ? new Date(b.created_at).getTime() : 0;
+                return dateB - dateA;
+            }));
         });
     }, []);
 
-    const formatDate = (isoString) => {
-        const date = new Date(isoString);
+    const formatDate = (isoString?: string) => {
+        const date = new Date(isoString || Date.now());
         return {
             day: date.toLocaleDateString('ar-OM', { day: 'numeric', month: 'short' }),
             time: date.toLocaleTimeString('ar-OM', { hour: '2-digit', minute: '2-digit' })
@@ -26,7 +31,7 @@ export const OrdersPage = () => {
             <h1 className="text-2xl font-bold text-slate-900 mb-6">الطلبات الأخيرة</h1>
 
             <div className="space-y-4 pb-24">
-                {sales.map((sale, idx) => {
+                {sales.map((sale) => {
                     const { day, time } = formatDate(sale.created_at);
                     return (
                         <div key={sale.id} className="card-premium p-0 overflow-hidden group active:scale-[0.98] transition-all">

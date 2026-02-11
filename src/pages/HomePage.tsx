@@ -1,13 +1,15 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { api } from '../services/api';
-import { TrendingUp, AlertCircle, Package, DollarSign, ArrowLeft, Calendar } from 'lucide-react';
+import { TrendingUp, AlertCircle, Package, DollarSign, ArrowLeft, Calendar, Truck } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
+import clsx from 'clsx';
 
 export const HomePage = () => {
     const [stats, setStats] = useState({
         totalSales: 0,
         lowStockCount: 0,
-        totalProducts: 0
+        totalProducts: 0,
+        totalPurchases: 0
     });
 
     // Default to 'all' to show everything initially
@@ -59,7 +61,11 @@ export const HomePage = () => {
 
     const loadStats = async () => {
         try {
-            const [products, sales] = await Promise.all([api.getProducts(), api.getSales()]);
+            const [products, sales, purchasesTotal] = await Promise.all([
+                api.getProducts(),
+                api.getSales(),
+                api.getPurchasesTotal()
+            ]);
 
             // Calculate Sales based on filter
             const dateRange = getDateRange();
@@ -67,7 +73,7 @@ export const HomePage = () => {
 
             if (dateRange) {
                 filteredSales = sales.filter(s => {
-                    const saleDate = new Date(s.created_at);
+                    const saleDate = new Date(s.created_at || new Date());
                     return saleDate >= dateRange.startDate && saleDate <= dateRange.endDate;
                 });
             }
@@ -80,7 +86,8 @@ export const HomePage = () => {
             setStats({
                 totalSales,
                 lowStockCount: lowStock,
-                totalProducts: products.length
+                totalProducts: products.length,
+                totalPurchases: purchasesTotal || 0
             });
         } catch (error) {
             console.error("Error loading stats:", error);
@@ -111,8 +118,8 @@ export const HomePage = () => {
                     <button
                         onClick={() => setDateFilter('all')}
                         className={`px-4 py-2 rounded-xl font-bold text-sm transition-all whitespace-nowrap ${dateFilter === 'all'
-                                ? 'bg-indigo-600 text-white shadow-md'
-                                : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200'
+                            ? 'bg-indigo-600 text-white shadow-md'
+                            : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200'
                             }`}
                     >
                         الكل
@@ -120,8 +127,8 @@ export const HomePage = () => {
                     <button
                         onClick={() => setDateFilter('today')}
                         className={`px-4 py-2 rounded-xl font-bold text-sm transition-all whitespace-nowrap ${dateFilter === 'today'
-                                ? 'bg-indigo-600 text-white shadow-md'
-                                : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200'
+                            ? 'bg-indigo-600 text-white shadow-md'
+                            : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200'
                             }`}
                     >
                         اليوم
@@ -129,8 +136,8 @@ export const HomePage = () => {
                     <button
                         onClick={() => setDateFilter('week')}
                         className={`px-4 py-2 rounded-xl font-bold text-sm transition-all whitespace-nowrap ${dateFilter === 'week'
-                                ? 'bg-indigo-600 text-white shadow-md'
-                                : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200'
+                            ? 'bg-indigo-600 text-white shadow-md'
+                            : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200'
                             }`}
                     >
                         هذا الأسبوع
@@ -138,8 +145,8 @@ export const HomePage = () => {
                     <button
                         onClick={() => setDateFilter('month')}
                         className={`px-4 py-2 rounded-xl font-bold text-sm transition-all whitespace-nowrap ${dateFilter === 'month'
-                                ? 'bg-indigo-600 text-white shadow-md'
-                                : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200'
+                            ? 'bg-indigo-600 text-white shadow-md'
+                            : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200'
                             }`}
                     >
                         هذا الشهر
@@ -147,8 +154,8 @@ export const HomePage = () => {
                     <button
                         onClick={() => setDateFilter('custom')}
                         className={`px-4 py-2 rounded-xl font-bold text-sm transition-all whitespace-nowrap flex items-center gap-2 ${dateFilter === 'custom'
-                                ? 'bg-indigo-600 text-white shadow-md'
-                                : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200'
+                            ? 'bg-indigo-600 text-white shadow-md'
+                            : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200'
                             }`}
                     >
                         <Calendar size={16} />
@@ -196,6 +203,7 @@ export const HomePage = () => {
                     <div className="text-4xl font-bold tracking-tight">{stats.totalSales.toLocaleString()} <span className="text-2xl">ر.ع.</span></div>
                 </div>
 
+
                 <div className="grid grid-cols-2 gap-4">
                     {/* Low Stock Card */}
                     <NavLink to="/inventory" className="card-premium p-5 hover:shadow-lg transition-all active:scale-95 group">
@@ -214,6 +222,26 @@ export const HomePage = () => {
                         <div className="text-2xl font-bold text-slate-900 mb-0.5">{stats.totalProducts}</div>
                         <div className="text-xs font-semibold text-emerald-600">إجمالي المنتجات</div>
                     </NavLink>
+
+                    {/* Total Purchases Card */}
+                    <div className="card-premium p-5 group">
+                        <div className="p-2 bg-orange-50 rounded-xl w-fit mb-3">
+                            <Truck className="text-orange-500" size={22} />
+                        </div>
+                        <div className="text-2xl font-bold text-slate-900 mb-0.5">{stats.totalPurchases.toLocaleString()}</div>
+                        <div className="text-xs font-semibold text-orange-600">إجمالي المشتريات</div>
+                    </div>
+
+                    {/* Net Profit Card */}
+                    <div className="card-premium p-5 group">
+                        <div className="p-2 bg-blue-50 rounded-xl w-fit mb-3">
+                            <DollarSign className="text-blue-500" size={22} />
+                        </div>
+                        <div className={clsx("text-2xl font-bold mb-0.5", (stats.totalSales - stats.totalPurchases) >= 0 ? "text-emerald-600" : "text-rose-600")}>
+                            {(stats.totalSales - stats.totalPurchases).toLocaleString()}
+                        </div>
+                        <div className="text-xs font-semibold text-blue-600">صافي الربح</div>
+                    </div>
                 </div>
             </div>
 

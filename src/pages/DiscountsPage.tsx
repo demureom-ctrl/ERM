@@ -1,15 +1,17 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { api } from '../services/api';
-import { ArrowLeft, Plus, X, Tag, Percent, Calendar } from 'lucide-react';
+import { ArrowLeft, Plus, X, Percent, Calendar } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
 
+import { Discount, Product } from '../types';
+
 export const DiscountsPage = () => {
     const navigate = useNavigate();
     const { user } = useAuth();
-    const [discounts, setDiscounts] = useState([]);
-    const [products, setProducts] = useState([]);
+    const [discounts, setDiscounts] = useState<Discount[]>([]);
+    const [products, setProducts] = useState<Product[]>([]);
     const [loading, setLoading] = useState(true);
     const [showAddModal, setShowAddModal] = useState(false);
 
@@ -35,7 +37,7 @@ export const DiscountsPage = () => {
         }
     };
 
-    const handleDelete = async (id) => {
+    const handleDelete = async (id: string) => {
         if (confirm('هل أنت متأكد من حذف هذا التخفيض؟')) {
             try {
                 await api.deleteDiscount(id);
@@ -48,7 +50,7 @@ export const DiscountsPage = () => {
     };
 
     // Check if discount is currently active
-    const isDiscountActive = (discount) => {
+    const isDiscountActive = (discount: Discount) => {
         const now = new Date();
         const start = new Date(discount.start_date);
         const end = new Date(discount.end_date);
@@ -170,8 +172,15 @@ export const DiscountsPage = () => {
 };
 
 // Add Discount Modal Component
-const AddDiscountModal = ({ products, onClose, onSuccess }) => {
-    const [formData, setFormData] = useState({
+const AddDiscountModal = ({ products, onClose, onSuccess }: { products: Product[], onClose: () => void, onSuccess: () => void }) => {
+    const [formData, setFormData] = useState<{
+        name: string;
+        percentage: number;
+        start_date: string;
+        end_date: string;
+        apply_to_all: boolean;
+        product_ids: string[];
+    }>({
         name: '',
         percentage: 10,
         start_date: '',
@@ -180,7 +189,7 @@ const AddDiscountModal = ({ products, onClose, onSuccess }) => {
         product_ids: []
     });
 
-    const handleSubmit = async (e) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
         if (!formData.name.trim()) {
@@ -207,7 +216,7 @@ const AddDiscountModal = ({ products, onClose, onSuccess }) => {
         }
     };
 
-    const toggleProduct = (productId) => {
+    const toggleProduct = (productId: string) => {
         setFormData(prev => ({
             ...prev,
             product_ids: prev.product_ids.includes(productId)

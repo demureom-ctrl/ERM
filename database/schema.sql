@@ -15,6 +15,7 @@ CREATE TABLE IF NOT EXISTS raw_materials (
     unit VARCHAR(50) NOT NULL,
     quantity NUMERIC(10, 2) DEFAULT 0,
     image_placeholder TEXT,
+    avg_cost NUMERIC(10, 3) DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

@@ -1,4 +1,3 @@
-import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { AppLayout } from './layouts/AppLayout';
@@ -12,24 +11,10 @@ import { CategoriesPage } from './pages/CategoriesPage';
 import { DiscountsPage } from './pages/DiscountsPage';
 import { UsersPage } from './pages/UsersPage';
 
-import { AuthProvider, useAuth } from './context/AuthContext';
+import { AuthProvider } from './context/AuthContext';
 import { LoginPage } from './pages/LoginPage';
 
-const ProtectedRoute = ({ children, allowedRoles }) => {
-  const { user, loading } = useAuth();
-
-  if (loading) return <div className="h-screen flex items-center justify-center">Loading...</div>;
-
-  if (!user) return <Navigate to="/login" replace />;
-
-  if (allowedRoles && !allowedRoles.includes(user.role)) {
-    // Redirect based on role capability
-    if (user.role === 'sales') return <Navigate to="/pos" replace />;
-    return <Navigate to="/" replace />;
-  }
-
-  return children;
-};
+import { ProtectedRoute } from './components/ProtectedRoute';
 
 function App() {
   return (
